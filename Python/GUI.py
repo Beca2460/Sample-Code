@@ -71,14 +71,15 @@ def getData(dataIn=None):
     ## Get current date and time for testing
     now = datetime.datetime.now()
     current_time = now.strftime("%H:%M:%S")
-    #round(random.uniform(35, 49.5),2)
+    #Check if data was recieved
     if dataIn is None:
         cleanData = {'Voltage': "...", 'Power': "...", 'Cargo': "...", 'Latch': "...", \
             'Latitude': "...", 'Longitude': "...", 'Latch 1': "...", 'Latch 2': "...",
             'Latch 3': "...", 'Latch 4': "...", 'TimeStamp': current_time}
     else: 
-        L = dataIn.data.decode()
-        decoded = decodeData(L)
+        L = dataIn.data.decode() 
+        decoded = decodeData(L) #if data was recieved decode it
+        #create clean data dict
         cleanData = {'Voltage': 45, 'Power': 'yes', 'Cargo': "full", 'Latch': decoded[5], \
             'Latitude': "40.0150° N", 'Longitude': "105.2705° W", 'Latch 1': decoded[0], 'Latch 2': decoded[1],
             'Latch 3': decoded[2], 'Latch 4': decoded[3], 'TimeStamp': current_time}
@@ -93,7 +94,9 @@ def getData(dataIn=None):
 # Arguments: None
 # Returns: None
 def decodeData(data):
-    decode = [[] for i in range(5)]
+    decode = [[] for i in range(5)] #create empty array of decoded info
+
+    # Data in is 4 bit for each of 4 latchs ex "0000", "0100", etc.
     if data[0] == "1":
         decode[0] = "1"
     elif data[0] == "0":
@@ -146,21 +149,17 @@ def decodeData(data):
 # Arguments: None
 # Returns: None
 def updateData():
-    try:
+    try: #try to get data from radio
         ## Recieve Data from XBee ##
-        readData = homeXbee.read_data_from(remoteXbee, 0)
-        # readData = homeXbee.wait_read_frame(remoteXbee)
-        remote = readData.remote_device
-        dataIn = readData.data
+        readData = homeXbee.read_data_from(remoteXbee, 0) #get data from remote XBee device
+        remote = readData.remote_device 
+        dataIn = readData.data #Pull data from API Frame
         is_broadcast = readData.is_broadcast
-        timestamp = readData.timestamp
-        #print(timestamp)
-        #if(timestamp != None):
-         #   writeTime("Rx : ", str(timestamp))
-        #print(readData.data+"\n")
-        data = getData(readData)
+        timestamp = readData.timestamp #Get a timestamp on the data sent
+        data = getData(readData) #Send data to the decoding and displaying functions
       
-        Timestamp['text'] = data['TimeStamp']
+        #display data to GUI
+        Timestamp['text'] = data['TimeStamp'] 
         
         BattVolt['text'] = str(data['Voltage'])
         PowStat['text'] = data['Power']
@@ -177,6 +176,7 @@ def updateData():
         Latch3['text'] = "Latch 3: " + data['Latch 3']
         Latch4['text'] = "Latch 4: " + data['Latch 4']
 
+        #Change display color based on latch status
         if data['Latch 1'] == "1":
             Latch1['bg'] = latchFull
         elif data['Latch 1'] == "0":
@@ -204,11 +204,12 @@ def updateData():
             Latch4['bg'] = latchOpen
         else:
             Latch4['bg'] = latchDoor
-    except TimeoutException: 
+    
+    except TimeoutException: #if radio does not send data no need to update GUI
 
         data = getData() 
         Timestamp['text'] = data['TimeStamp']
-
+    #refresh the GUI window
     window.after(100, updateData)
 
 ############### startData ###############
@@ -240,6 +241,7 @@ def startData():
 # Returns: None
 def windowParameters():
 
+    #Make them usable in all functions
     global winLength, winHeight, windowBGColor, geoString, startHeight, battFull, labelColorText
     global labelColorValue, buttonBackgroundA, buttonBackgroundP, battBar, battBack, latchFull
     global latchDoor, latchOpen, unlatchButtonA, unlatchButtonP
@@ -269,24 +271,24 @@ def windowParameters():
     unlatchButtonA = "#6DAC10"
 
 def xBeeParameters():
-    com = tk.Tk()
+    com = tk.Tk() #create start up window
     com.withdraw()
     # the input dialog
     comAddress = simpledialog.askstring(title="Radio Port",
                                     prompt="Port Name:    ")
     com.destroy()
-    return comAddress
+    return comAddress #return the address used for serial connection
 
-################ Main Block ######################
+################ Main ######################
 if __name__ == "__main__":
     # Instatiate home Xbee and open
-    comAddress = xBeeParameters()
-    baudRate = 9600
-    try:
-        homeXbee = XBeeDevice(comAddress, baudRate)
-        homeXbee.open(force_settings=True)
+    comAddress = xBeeParameters() #Get serial port
+    baudRate = 9600 #set baud to serial radio rate
+    try: #try to open the radio
+        homeXbee = XBeeDevice(comAddress, baudRate) #open radio with baud and serial port
+        homeXbee.open(force_settings=True) #force the programable settings
         print("Connection to home XBee made \n")
-    except OSError:
+    except OSError: #if the port doesn't open send error and quit
         print("OSError, failed connection. \n")
         message = tk.Tk()
         message.withdraw()
