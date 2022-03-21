@@ -1,0 +1,4 @@
+Sample Python Code from senior projects of undergrad. This code creates a GUI and connects to serial communication of XBee radio. 
+Also translates XBee HexaDecimal API Frames to readable symbols and characters. 
+
+Getting past the connect screen is impossible without a device and this code will not run fully without an XBee to connect to.
